@@ -72,6 +72,36 @@ router.get("/:recipient/:id", async (req, res) => {
     }
 });
 
+router.get("/:recipient/:id/text", async (req, res) => {
+    try {
+        const recipient = req.params.recipient + "@" + process.env.HOSTNAME;
+        const textEmail = await emailQueries.getTextEmailByRecipientAndId(recipient, req.params.id);
+        if (textEmail) {
+            res.status(200).send(textEmail);
+        } else {
+            res.status(404).json({ error: "Email not found" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+router.get("/:recipient/:id/html", async (req, res) => {
+    try {
+        const recipient = req.params.recipient + "@" + process.env.HOSTNAME;
+        const htmlEmail = await emailQueries.getHtmlEmailByRecipientAndId(recipient, req.params.id);
+        if (htmlEmail) {
+            res.status(200).send(htmlEmail);
+        } else {
+            res.status(404).json({ error: "Email not found" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 router.get("/:recipient/:id/raw", async (req, res) => {
     try {
         const recipient = req.params.recipient + "@" + process.env.HOSTNAME;

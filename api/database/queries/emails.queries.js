@@ -41,9 +41,21 @@ const deleteEmailsByRecipient = async (recipient) => {
 };
 
 const getEmailByRecipientAndId = async (recipient, id) => {
-    const query = "SELECT id, sender, sender_name, recipient, subject, text, html, sent_at, received_at FROM emails WHERE recipient = $1 AND id = $2";
+    const query = "SELECT id, sender, sender_name, recipient, subject, text, sent_at, received_at FROM emails WHERE recipient = $1 AND id = $2";
     const result = await pool.query(query, [recipient, id]);
     return result.rows?.[0] ?? null;
+};
+
+const getTextEmailByRecipientAndId = async (recipient, id) => {
+    const query = "SELECT text FROM emails WHERE recipient = $1 AND id = $2";
+    const result = await pool.query(query, [recipient, id]);
+    return result.rows?.[0]?.text ?? null;
+};
+
+const getHtmlEmailByRecipientAndId = async (recipient, id) => {
+    const query = "SELECT html FROM emails WHERE recipient = $1 AND id = $2";
+    const result = await pool.query(query, [recipient, id]);
+    return result.rows?.[0]?.html ?? null;
 };
 
 const getRawEmailByRecipientAndId = async (recipient, id) => {
@@ -71,6 +83,8 @@ module.exports = {
     getEmailsByRecipient,
     deleteEmailsByRecipient,
     getEmailByRecipientAndId,
+    getTextEmailByRecipientAndId,
+    getHtmlEmailByRecipientAndId,
     getRawEmailByRecipientAndId,
     deleteEmailByRecipientAndId,
     deleteEmailsBeforeDate,
