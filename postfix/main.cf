@@ -1,0 +1,17 @@
+myhostname = $HOSTNAME
+mydestination = 
+inet_interfaces = all
+inet_protocols = all
+mynetworks = 127.0.0.1/32
+maillog_file = /var/log/mail.log
+smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
+virtual_uid_maps = static:100
+virtual_gid_maps = static:101
+virtual_mailbox_domains = $HOSTNAME
+virtual_mailbox_maps = lmdb:/etc/postfix/virtual
+virtual_alias_maps = lmdb:/etc/postfix/virtual_aliases
+alias_database =
+alias_maps =
+minimal_backoff_time = 10s
+maximal_backoff_time = 15m
+queue_run_delay = 10s

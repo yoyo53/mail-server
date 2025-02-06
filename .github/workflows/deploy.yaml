@@ -1,0 +1,37 @@
+name: Deploy 🚀
+
+on:
+  workflow_dispatch:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  deploy:
+    name: Deploy 🚀
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
+      HOSTNAME: ${{ secrets.HOSTNAME }}
+      API_PORT: ${{ vars.API_PORT }}
+      EMAIL_EXPIRATION_TIME: ${{ vars.EMAIL_EXPIRATION_TIME }}
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl 🔧
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Configure Secrets 🔐
+        run: flyctl secrets set DATABASE_URL="$DATABASE_URL" AUTHORIZATION="$AUTHORIZATION" HOSTNAME="$HOSTNAME" API_PORT="$API_PORT" EMAIL_EXPIRATION_TIME="$EMAIL_EXPIRATION_TIME" --stage
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Deploy 🚀
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
