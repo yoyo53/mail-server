@@ -27,11 +27,11 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Configure Secrets 🔐
-        run: flyctl secrets set DATABASE_URL="$DATABASE_URL" AUTHORIZATION="$AUTHORIZATION" HOSTNAME="$HOSTNAME" API_PORT="$API_PORT" EMAIL_EXPIRATION_TIME="$EMAIL_EXPIRATION_TIME" --stage
+        run: flyctl -a $FLY_APP_NAME secrets set DATABASE_URL="$DATABASE_URL" AUTHORIZATION="$AUTHORIZATION" HOSTNAME="$HOSTNAME" API_PORT="$API_PORT" EMAIL_EXPIRATION_TIME="$EMAIL_EXPIRATION_TIME" --stage
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Deploy 🚀
-        run: flyctl deploy --remote-only
+        run: flyctl -a $FLY_APP_NAME deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
