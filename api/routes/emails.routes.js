@@ -11,7 +11,7 @@ router.post("/", async (req, res) => {
             for (const attachment of attachments ?? []) {
                 await attachmentsQueries.saveAttachment(email.id, attachment.filename, attachment.contentType, attachment.size, attachment.content);
             }
-            res.status(201).json(email);
+            res.status(201).end();
         } else {
             res.status(400).json({ error: "Bad request" });
         }
