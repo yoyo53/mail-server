@@ -1,6 +1,6 @@
 const pool = require("../db.connection");
 
-const saveEmail = async (text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient) => {
+const saveEmail = async (text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient, rawEmail) => {
     const query = "INSERT INTO emails (sender, sender_name, recipient, subject, text, html, sent_at, received_at, raw_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *";
     const values = [senderEmail ?? sender, senderName, recipient, subject, text, html ?? textAsHtml, date?.toISOString(), new Date().toISOString(), rawEmail ?? ""];
     const result = await pool.query(query, values);
