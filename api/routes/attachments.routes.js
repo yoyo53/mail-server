@@ -27,7 +27,7 @@ router.get("/:attachmentId", async (req, res) => {
         if (attachment) {
             res.setHeader("Content-Type", attachment.content_type)
                 .setHeader("Content-Length", attachment.size)
-               .setHeader("Content-Disposition", `attachment; filename="${attachment.filename}"`)
+               .setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(attachment.filename)}"`)
                .status(200).send(attachment.content);
         } else {
             res.status(404).json({ error: "Attachment not found" });
