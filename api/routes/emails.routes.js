@@ -9,7 +9,7 @@ router.post("/", async (req, res) => {
             const { text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient, attachments } = await emailController.parseRawEmail(req.body);
             const email = await emailQueries.saveEmail(text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient, req.body);
             for (const attachment of attachments ?? []) {
-                await attachmentsQueries.saveAttachment(email.id, attachment.filename, attachment.contentType, attachment.content);
+                await attachmentsQueries.saveAttachment(email.id, attachment.filename, attachment.contentType, attachment.size, attachment.content);
             }
             res.status(201).json(email);
         } else {

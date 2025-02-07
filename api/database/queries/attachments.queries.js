@@ -1,8 +1,8 @@
 const pool = require("../db.connection");
 
 const saveAttachment = async (emailId, filename, contentType, size, content) => {
-    const query = "INSERT INTO attachments (email_id, filename, content_type, content) VALUES ($1, $2, $3, $4) RETURNING *";
-    const values = [emailId, filename, contentType, content];
+    const query = "INSERT INTO attachments (email_id, filename, content_type, size, content) VALUES ($1, $2, $3, $4) RETURNING *";
+    const values = [emailId, filename, contentType, size, content];
     const result = await pool.query(query, values);
     return result.rows[0];
 };
