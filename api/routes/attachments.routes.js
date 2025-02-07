@@ -1,5 +1,5 @@
 const attachmentsQueries = require("../database/queries/attachments.queries");
-const router = require("express").Router();
+const router = require("express").Router({ mergeParams: true });
 
 router.get("/", async (req, res) => {
     try {
@@ -26,6 +26,7 @@ router.get("/:attachmentId", async (req, res) => {
         const attachment = await attachmentsQueries.getAttachmentByEmailIdAndId(req.params.emailId, req.params.attachmentId);
         if (attachment) {
             res.setHeader("Content-Type", attachment.content_type)
+                .setHeader("Content-Length", attachment.size)
                .setHeader("Content-Disposition", `attachment; filename="${attachment.filename}"`)
                .status(200).send(attachment.content);
         } else {

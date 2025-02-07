@@ -20,6 +20,7 @@ async function createTables() {
             email_id INTEGER NOT NULL REFERENCES emails(id) ON DELETE CASCADE,
             filename TEXT NOT NULL,
             content_type TEXT NOT NULL,
+            size INTEGER NOT NULL,
             content BYTEA NOT NULL
         );
     `);
