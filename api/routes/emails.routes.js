@@ -1,6 +1,6 @@
 const emailController = require("../controllers/emails.controller");
 const emailQueries = require("../database/queries/emails.queries");
-const attachementsQueries = require("../database/queries/attachements.queries");
+const attachmentsQueries = require("../database/queries/attachments.queries");
 const router = require("express").Router();
 
 router.post("/", async (req, res) => {
@@ -9,7 +9,7 @@ router.post("/", async (req, res) => {
             const { text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient, attachments } = await emailController.parseRawEmail(req.body);
             const email = await emailQueries.saveEmail(text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient);
             for (const attachment of attachments ?? []) {
-                await attachementsQueries.saveAttachment(email.id, attachment.filename, attachment.contentType, attachment.content);
+                await attachmentsQueries.saveAttachment(email.id, attachment.filename, attachment.contentType, attachment.content);
             }
             res.status(201).json(email);
         } else {
