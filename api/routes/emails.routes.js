@@ -1,10 +1,16 @@
+const emailController = require("../controllers/emails.controller");
 const emailQueries = require("../database/queries/emails.queries");
+const attachementsQueries = require("../database/queries/attachements.queries");
 const router = require("express").Router();
 
 router.post("/", async (req, res) => {
     try {
         if (req.body) {
-            const email = await emailQueries.saveEmail(req.body);
+            const { text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient, attachments } = await emailController.parseRawEmail(req.body);
+            const email = await emailQueries.saveEmail(text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient);
+            for (const attachment of attachments ?? []) {
+                await attachementsQueries.saveAttachment(email.id, attachment.filename, attachment.contentType, attachment.content);
+            }
             res.status(201).json(email);
         } else {
             res.status(400).json({ error: "Bad request" });
@@ -57,10 +63,10 @@ router.delete("/:recipient", async (req, res) => {
     }
 });
 
-router.get("/:recipient/:id", async (req, res) => {
+router.get("/:recipient/:emailId", async (req, res) => {
     try {
         const recipient = req.params.recipient + "@" + process.env.HOSTNAME;
-        const email = await emailQueries.getEmailByRecipientAndId(recipient, req.params.id);
+        const email = await emailQueries.getEmailByRecipientAndId(recipient, req.params.emailId);
         if (email) {
             res.status(200).json(email);
         } else {
@@ -72,10 +78,10 @@ router.get("/:recipient/:id", async (req, res) => {
     }
 });
 
-router.get("/:recipient/:id/text", async (req, res) => {
+router.get("/:recipient/:emailId/text", async (req, res) => {
     try {
         const recipient = req.params.recipient + "@" + process.env.HOSTNAME;
-        const textEmail = await emailQueries.getTextEmailByRecipientAndId(recipient, req.params.id);
+        const textEmail = await emailQueries.getTextEmailByRecipientAndId(recipient, req.params.emailId);
         if (textEmail) {
             res.status(200).send(textEmail);
         } else {
@@ -87,10 +93,10 @@ router.get("/:recipient/:id/text", async (req, res) => {
     }
 });
 
-router.get("/:recipient/:id/html", async (req, res) => {
+router.get("/:recipient/:emailId/html", async (req, res) => {
     try {
         const recipient = req.params.recipient + "@" + process.env.HOSTNAME;
-        const htmlEmail = await emailQueries.getHtmlEmailByRecipientAndId(recipient, req.params.id);
+        const htmlEmail = await emailQueries.getHtmlEmailByRecipientAndId(recipient, req.params.emailId);
         if (htmlEmail) {
             res.status(200).send(htmlEmail);
         } else {
@@ -102,10 +108,10 @@ router.get("/:recipient/:id/html", async (req, res) => {
     }
 });
 
-router.get("/:recipient/:id/raw", async (req, res) => {
+router.get("/:recipient/:emailId/raw", async (req, res) => {
     try {
         const recipient = req.params.recipient + "@" + process.env.HOSTNAME;
-        const rawEmail = await emailQueries.getRawEmailByRecipientAndId(recipient, req.params.id);
+        const rawEmail = await emailQueries.getRawEmailByRecipientAndId(recipient, req.params.emailId);
         if (rawEmail) {
             res.status(200).send(rawEmail);
         } else {
@@ -117,10 +123,10 @@ router.get("/:recipient/:id/raw", async (req, res) => {
     }
 });
 
-router.delete("/:recipient/:id", async (req, res) => {
+router.delete("/:recipient/:emailId", async (req, res) => {
     try {
         const recipient = req.params.recipient + "@" + process.env.HOSTNAME;
-        const id = await emailQueries.deleteEmailByRecipientAndId(recipient, req.params.id);
+        const id = await emailQueries.deleteEmailByRecipientAndId(recipient, req.params.emailId);
         if (id) {
             res.status(204).end();
         } else {
@@ -131,5 +137,7 @@ router.delete("/:recipient/:id", async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
+router.use("/:recipient/:emailId/attachments", require("./attachments.routes"));
 
 module.exports = router;

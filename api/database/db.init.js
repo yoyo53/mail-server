@@ -14,6 +14,14 @@ async function createTables() {
             received_at TEXT NOT NULL,
             raw_email TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS attachments (
+            id SERIAL PRIMARY KEY,
+            email_id INTEGER NOT NULL REFERENCES emails(id) ON DELETE CASCADE,
+            filename TEXT NOT NULL,
+            content_type TEXT NOT NULL,
+            content BYTEA NOT NULL
+        );
     `);
 }
 
