@@ -3,7 +3,7 @@ const router = require("express").Router();
 
 router.get("/", async (req, res) => {
     try {
-        const attachments = await attachmentsQueries.getAttachments(req.params.emailId);
+        const attachments = await attachmentsQueries.getAttachmentsByEmailId(req.params.emailId);
         res.status(200).json(attachments);
     } catch (error) {
         console.error(error);
@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
 
 router.delete("/", async (req, res) => {
     try {
-        await attachmentsQueries.deleteAttachments(req.params.emailId);
+        await attachmentsQueries.deleteAttachmentsByEmailId(req.params.emailId);
         res.status(204).end();
     } catch (error) {
         console.error(error);
