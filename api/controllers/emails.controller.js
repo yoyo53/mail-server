@@ -7,6 +7,6 @@ const parseRawEmail = async (rawEmail) => {
     return { text, html, textAsHtml, subject, date, sender, senderName, senderEmail, recipient, attachments };
 };
 
-exports = {
+module.exports = {
     parseRawEmail,
 };
