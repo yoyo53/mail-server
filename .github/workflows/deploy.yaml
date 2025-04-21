@@ -14,7 +14,8 @@ jobs:
     environment: production
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
+      USERNAME: ${{ secrets.USERNAME }}
+      PASSWORD: ${{ secrets.PASSWORD }}
       HOSTNAME: ${{ secrets.HOSTNAME }}
       API_PORT: ${{ vars.API_PORT }}
       EMAIL_EXPIRATION_TIME: ${{ vars.EMAIL_EXPIRATION_TIME }}
@@ -27,7 +28,7 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Configure Secrets 🔐
-        run: flyctl -a ${{ secrets.FLY_APP_NAME }} secrets set DATABASE_URL="$DATABASE_URL" AUTHORIZATION="$AUTHORIZATION" HOSTNAME="$HOSTNAME" API_PORT="$API_PORT" EMAIL_EXPIRATION_TIME="$EMAIL_EXPIRATION_TIME" --stage
+        run: flyctl -a ${{ secrets.FLY_APP_NAME }} secrets set DATABASE_URL="$DATABASE_URL" USERNAME="$USERNAME" PASSWORD="$PASSWORD" HOSTNAME="$HOSTNAME" API_PORT="$API_PORT" EMAIL_EXPIRATION_TIME="$EMAIL_EXPIRATION_TIME" --stage
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
