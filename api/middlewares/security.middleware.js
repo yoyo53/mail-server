@@ -1,6 +1,6 @@
 function verifyAuthorization(request, response, next) {
     const auth = request.headers.authorization;
-    if (!auth) {
+    if (!auth || !auth.startsWith('Basic ')) {
         response.set('WWW-Authenticate', 'Basic realm="Secure Area"');
         return response.status(401).send('Authentication required.');
     }
