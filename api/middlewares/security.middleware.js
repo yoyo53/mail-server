@@ -1,16 +1,16 @@
 function verifyAuthorization(request, response, next) {
-    const auth = req.headers.authorization;
+    const auth = request.headers.authorization;
     if (!auth) {
-        res.set('WWW-Authenticate', 'Basic realm="Secure Area"');
-        return res.status(401).send('Authentication required.');
+        response.set('WWW-Authenticate', 'Basic realm="Secure Area"');
+        return response.status(401).send('Authentication required.');
     }
 
     const [username, password] = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
     if (username === process.env.USERNAME && password === process.env.PASSWORD) {
         return next();
     } else {
-        res.set('WWW-Authenticate', 'Basic realm="Secure Area"');
-        return res.status(401).send('Invalid credentials.');
+        response.set('WWW-Authenticate', 'Basic realm="Secure Area"');
+        return response.status(401).send('Invalid credentials.');
     }
 }
 
