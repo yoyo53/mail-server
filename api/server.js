@@ -9,7 +9,7 @@ require("./database/db.init")
         emailQueries.deleteEmailsBeforeDate(new Date(Date.now() - EMAIL_EXPIRATION_TIME * 60 * 1000));
         setInterval(() => {
             emailQueries.deleteEmailsBeforeDate(new Date(Date.now() - EMAIL_EXPIRATION_TIME * 60 * 1000));
-        }, 60 * 1000);
+        }, 24 * 60 * 60 * 1000);
     })
     .then(() => {
         const PORT = process.env.API_PORT || 3000;
