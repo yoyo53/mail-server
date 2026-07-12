@@ -6,6 +6,9 @@
 <title>Mail</title>
 <style>
   * { box-sizing: border-box; }
+  /* An id selector's `display` beats the UA `[hidden]{display:none}` rule, so the
+     hidden attribute would be ignored on #login/#app/#appMain. Force it to win. */
+  [hidden] { display: none !important; }
   body {
     margin: 0; height: 100vh; display: flex; flex-direction: column;
     font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
