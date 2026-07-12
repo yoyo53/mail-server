@@ -1,7 +1,9 @@
 function verifyAuthorization(request, response, next) {
+    // NB: no `WWW-Authenticate: Basic` header is sent — it would make the browser
+    // hijack the UI's fetch() calls with its own native login popup (and loop on it).
+    // The web UI supplies credentials via the Authorization header itself.
     const auth = request.headers.authorization;
     if (!auth || !auth.startsWith('Basic ')) {
-        response.set('WWW-Authenticate', 'Basic realm="Secure Area"');
         return response.status(401).send('Authentication required.');
     }
 
@@ -9,7 +11,6 @@ function verifyAuthorization(request, response, next) {
     if (username === process.env.USERNAME && password === process.env.PASSWORD) {
         return next();
     } else {
-        response.set('WWW-Authenticate', 'Basic realm="Secure Area"');
         return response.status(401).send('Invalid credentials.');
     }
 }
