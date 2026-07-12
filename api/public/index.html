@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mail</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 100vh; display: flex; flex-direction: column;
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1a1a1a; background: #f4f5f7;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; background: #24292f; color: #fff; flex: none;
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  header .spacer { flex: 1; }
+  header button, .btn {
+    font: inherit; cursor: pointer; border: 0; border-radius: 5px;
+    padding: 5px 10px; background: #444c56; color: #fff;
+  }
+  header button:hover, .btn:hover { background: #586069; }
+  .btn.danger { background: #cf222e; }
+  .btn.danger:hover { background: #a40e26; }
+  main { flex: 1; display: flex; min-height: 0; }
+  .col { overflow-y: auto; border-right: 1px solid #d0d7de; background: #fff; }
+  #mailboxes { width: 240px; flex: none; }
+  #messages { width: 340px; flex: none; }
+  #viewer { flex: 1; padding: 0; display: flex; flex-direction: column; }
+  .item {
+    padding: 10px 14px; border-bottom: 1px solid #eaecef; cursor: pointer;
+  }
+  .item:hover { background: #f6f8fa; }
+  .item.active { background: #ddf4ff; }
+  .item .top { display: flex; justify-content: space-between; gap: 8px; }
+  .item .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .sub { color: #57606a; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .meta { color: #8b949e; font-size: 11px; flex: none; }
+  .badge {
+    background: #d0d7de; color: #24292f; border-radius: 10px;
+    padding: 0 7px; font-size: 11px; font-weight: 600; flex: none;
+  }
+  .col-head {
+    position: sticky; top: 0; background: #fff; z-index: 1;
+    padding: 8px 12px; border-bottom: 1px solid #d0d7de;
+    display: flex; align-items: center; gap: 8px; font-weight: 600;
+  }
+  .col-head .spacer { flex: 1; }
+  .empty { padding: 24px; color: #8b949e; text-align: center; }
+  /* viewer */
+  #viewer .vhead { padding: 14px 18px; border-bottom: 1px solid #d0d7de; background: #fff; }
+  #viewer h2 { margin: 0 0 6px; font-size: 17px; }
+  #viewer .kv { color: #57606a; font-size: 13px; margin: 2px 0; }
+  #viewer .actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  #viewer .tabs { display: flex; gap: 4px; }
+  #viewer .tabs button {
+    background: #eaecef; color: #24292f; border: 0; border-radius: 5px;
+    padding: 5px 12px; cursor: pointer; font: inherit;
+  }
+  #viewer .tabs button.active { background: #24292f; color: #fff; }
+  #viewer .body { flex: 1; min-height: 0; }
+  #viewer iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+  #viewer pre { margin: 0; padding: 18px; white-space: pre-wrap; word-break: break-word; height: 100%; overflow: auto; background: #fff; }
+  .attachments { padding: 10px 18px; border-top: 1px solid #d0d7de; background: #fafbfc; }
+  .attachments a { color: #0969da; cursor: pointer; text-decoration: none; margin-right: 14px; }
+  .attachments a:hover { text-decoration: underline; }
+  /* login */
+  #login {
+    position: fixed; inset: 0; background: #f4f5f7;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #login form {
+    background: #fff; padding: 28px; border-radius: 10px; width: 300px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.1); display: flex; flex-direction: column; gap: 12px;
+  }
+  #login h1 { margin: 0 0 4px; font-size: 18px; }
+  #login input {
+    font: inherit; padding: 9px 11px; border: 1px solid #d0d7de; border-radius: 6px;
+  }
+  #login button { padding: 9px; background: #1f883d; color: #fff; border: 0; border-radius: 6px; cursor: pointer; font: inherit; }
+  #login .err { color: #cf222e; font-size: 13px; min-height: 16px; }
+</style>
+</head>
+<body>
+<div id="login" hidden>
+  <form id="loginForm">
+    <h1>Mail server</h1>
+    <input id="u" placeholder="username" autocomplete="username" autofocus>
+    <input id="p" type="password" placeholder="password" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>
+    <button type="submit">Sign in</button>
+  </form>
+</div>
+
+<header hidden id="app">
+  <h1>📬 Mail</h1>
+  <span class="spacer"></span>
+  <button id="refresh">Refresh</button>
+  <button id="logout">Logout</button>
+</header>
+<main hidden id="appMain">
+  <div class="col" id="mailboxes"></div>
+  <div class="col" id="messages"><div class="empty">Pick a mailbox</div></div>
+  <div class="col" id="viewer"><div class="empty" style="margin:auto">Pick a message</div></div>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+let AUTH = sessionStorage.getItem("mail_auth") || "";
+let current = { mailbox: null, email: null };
+
+function authHeader() { return { Authorization: "Basic " + AUTH }; }
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { ...authHeader(), ...(opts.headers || {}) } });
+  if (res.status === 401) { logout(); throw new Error("unauthorized"); }
+  return res;
+}
+
+function esc(s) { return (s ?? "").toString().replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function localPart(recipient) { return recipient.split("@")[0]; }
+function fmtDate(s) { if (!s) return ""; const d = new Date(s); return isNaN(d) ? s : d.toLocaleString(); }
+
+/* ---------- login ---------- */
+function showLogin() { $("#login").hidden = false; $("#app").hidden = $("#appMain").hidden = true; }
+function showApp() { $("#login").hidden = true; $("#app").hidden = $("#appMain").hidden = false; }
+function logout() { AUTH = ""; sessionStorage.removeItem("mail_auth"); showLogin(); }
+
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  AUTH = btoa($("#u").value + ":" + $("#p").value);
+  const res = await fetch("/emails", { headers: authHeader() });
+  if (res.ok) { sessionStorage.setItem("mail_auth", AUTH); showApp(); loadMailboxes(); }
+  else { $("#loginErr").textContent = "Invalid credentials"; AUTH = ""; }
+});
+$("#logout").addEventListener("click", logout);
+$("#refresh").addEventListener("click", () => {
+  loadMailboxes();
+  if (current.mailbox) loadMessages(current.mailbox);
+});
+
+/* ---------- mailboxes ---------- */
+async function loadMailboxes() {
+  const box = $("#mailboxes");
+  try {
+    const boxes = await (await api("/emails")).json();
+    if (!boxes.length) { box.innerHTML = '<div class="empty">No mail</div>'; return; }
+    boxes.sort((a, b) => (b.last_email || "").localeCompare(a.last_email || ""));
+    box.innerHTML = boxes.map(b => `
+      <div class="item" data-rcpt="${esc(b.recipient)}" ${b.recipient === current.mailbox ? 'class="item active"' : ""}>
+        <div class="top"><span class="name">${esc(b.recipient)}</span><span class="badge">${b.emails}</span></div>
+        <div class="meta">${fmtDate(b.last_email)}</div>
+      </div>`).join("");
+    box.querySelectorAll(".item").forEach(el =>
+      el.addEventListener("click", () => selectMailbox(el.dataset.rcpt)));
+  } catch (e) {}
+}
+
+function selectMailbox(recipient) {
+  current.mailbox = recipient; current.email = null;
+  $("#mailboxes").querySelectorAll(".item").forEach(el =>
+    el.classList.toggle("active", el.dataset.rcpt === recipient));
+  $("#viewer").innerHTML = '<div class="empty" style="margin:auto">Pick a message</div>';
+  loadMessages(recipient);
+}
+
+/* ---------- messages ---------- */
+async function loadMessages(recipient) {
+  const box = $("#messages");
+  const lp = encodeURIComponent(localPart(recipient));
+  const emails = await (await api(`/emails/${lp}`)).json();
+  const head = `<div class="col-head"><span>${esc(recipient)}</span><span class="spacer"></span>
+    <button class="btn danger" id="delBox">Empty</button></div>`;
+  if (!emails.length) { box.innerHTML = head + '<div class="empty">No messages</div>'; }
+  else {
+    box.innerHTML = head + emails.map(m => `
+      <div class="item" data-id="${m.id}" ${m.id === current.email ? 'class="item active"' : ""}>
+        <div class="name">${esc(m.sender_name || m.sender || "(unknown)")}</div>
+        <div class="sub">${esc(m.subject || "(no subject)")}</div>
+        <div class="meta">${fmtDate(m.received_at)}</div>
+      </div>`).join("");
+    box.querySelectorAll(".item").forEach(el =>
+      el.addEventListener("click", () => openEmail(recipient, el.dataset.id)));
+  }
+  $("#delBox").addEventListener("click", async () => {
+    if (!confirm(`Delete ALL emails in ${recipient}?`)) return;
+    await api(`/emails/${lp}`, { method: "DELETE" });
+    current.mailbox = null;
+    $("#messages").innerHTML = '<div class="empty">Pick a mailbox</div>';
+    $("#viewer").innerHTML = '<div class="empty" style="margin:auto">Pick a message</div>';
+    loadMailboxes();
+  });
+}
+
+/* ---------- viewer ---------- */
+async function openEmail(recipient, id) {
+  current.email = Number(id);
+  $("#messages").querySelectorAll(".item").forEach(el =>
+    el.classList.toggle("active", el.dataset.id === String(id)));
+  const lp = encodeURIComponent(localPart(recipient));
+  const base = `/emails/${lp}/${id}`;
+  const email = await (await api(base)).json();
+  const attachments = await (await api(`${base}/attachments`)).json();
+
+  $("#viewer").innerHTML = `
+    <div class="vhead">
+      <h2>${esc(email.subject || "(no subject)")}</h2>
+      <div class="kv"><b>From:</b> ${esc(email.sender_name ? email.sender_name + " <" + email.sender + ">" : email.sender)}</div>
+      <div class="kv"><b>To:</b> ${esc(email.recipient)}</div>
+      <div class="kv"><b>Received:</b> ${fmtDate(email.received_at)}${email.sent_at ? " &nbsp;·&nbsp; <b>Sent:</b> " + fmtDate(email.sent_at) : ""}</div>
+      <div class="actions">
+        <div class="tabs">
+          <button data-view="html" class="active">HTML</button>
+          <button data-view="text">Text</button>
+          <button data-view="raw">Raw</button>
+        </div>
+        <span class="spacer" style="flex:1"></span>
+        <button class="btn danger" id="delEmail">Delete</button>
+      </div>
+    </div>
+    <div class="body" id="body"></div>
+    ${attachments.length ? `<div class="attachments"><b>Attachments:</b> ` +
+      attachments.map(a => `<a data-aid="${a.id}" data-name="${esc(a.filename)}">${esc(a.filename)} (${(a.size/1024).toFixed(1)} KB)</a>`).join("") +
+      `</div>` : ""}`;
+
+  const tabs = $("#viewer .tabs");
+  tabs.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    tabs.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+    renderBody(base, b.dataset.view);
+  }));
+  renderBody(base, "html");
+
+  $("#delEmail").addEventListener("click", async () => {
+    if (!confirm("Delete this email?")) return;
+    await api(base, { method: "DELETE" });
+    current.email = null;
+    $("#viewer").innerHTML = '<div class="empty" style="margin:auto">Pick a message</div>';
+    loadMessages(recipient);
+    loadMailboxes();
+  });
+
+  $("#viewer").querySelectorAll(".attachments a").forEach(a =>
+    a.addEventListener("click", () => downloadAttachment(`${base}/attachments/${a.dataset.aid}`, a.dataset.name)));
+}
+
+async function renderBody(base, view) {
+  const body = $("#body");
+  if (view === "html") {
+    const res = await api(`${base}/html`);
+    const html = res.ok ? await res.text() : "";
+    if (!html) { body.innerHTML = '<div class="empty">No HTML body</div>'; return; }
+    body.innerHTML = `<iframe sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`;
+    body.querySelector("iframe").srcdoc = html;
+  } else {
+    const res = await api(`${base}/${view}`);
+    const txt = res.ok ? await res.text() : "";
+    body.innerHTML = `<pre></pre>`;
+    body.querySelector("pre").textContent = txt || "(empty)";
+  }
+}
+
+async function downloadAttachment(url, filename) {
+  const res = await api(url);
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ---------- boot ---------- */
+if (AUTH) {
+  fetch("/emails", { headers: authHeader() })
+    .then(r => { if (r.ok) { showApp(); loadMailboxes(); } else logout(); })
+    .catch(logout);
+} else showLogin();
+</script>
+</body>
+</html>
